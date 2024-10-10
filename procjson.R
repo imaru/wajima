@@ -11,6 +11,13 @@ ave<-fr*3
 tdir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\pose\\res"
 fl<-list.files(tdir, pattern='\\.json$')
 
+facedir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\processed"
+opr<-read.csv(paste(facedir,'wajima1_compressed.csv', sep='/'))
+
+# rollapplyr(ret_matriz, 5, sd, fill = 0)
+# aaa<-rollapplyr(opr$gaze_angle_x, 30*5, sd, na.rm=TRUE, by=30*5)
+
+
 nfl<-length(fl)
 fdt<-data.frame()
 
@@ -27,6 +34,7 @@ fdt<-data.frame()
 #     }
 #   }
 # }
+
 
 for (i in 1:nfl){
   d<-ndjson::stream_in(paste(tdir,fl[i],sep='/'))
@@ -52,12 +60,14 @@ for (i in 1:nfl){
   }
 }
 
-#fdt[fdt==0]<-NA
+colnames(fdt)<-c('NoseX','LeyeX','ReyeX','LearX','RearX','LshldX','RshldX','LelbX','RelbX','LwrstX','RwrstX','LhipX','RhipX','LkneeX','RkneeX','LanklX','RanklX','NoseY','LeyeY','ReyeY','LearY','RearY','LshldY','RshldY','LelbY','RelbY','LwrstY','RwrstY','LhipY','RhipY','LkneeY','RkneeY','LanklY','RanklY')
+
+fdt[fdt==0]<-NA
 #fdt2<-na.fill(fdt,'exend')
 
-adat<-rollmean(fdt,k=ave)
-#adat<-fdt
-adat<-cbind(adat,seq(1,nrow(adat),fill))
+#adat<-rollmean(fdt,k=ave)
+adat<-fdt
+adat<-cbind(adat,seq(1,nrow(adat)))
 colnames(adat)<-c('NoseX','LeyeX','ReyeX','LearX','RearX','LshldX','RshldX','LelbX','RelbX','LwrstX','RwrstX','LhipX','RhipX','LkneeX','RkneeX','LanklX','RanklX','NoseY','LeyeY','ReyeY','LearY','RearY','LshldY','RshldY','LelbY','RelbY','LwrstY','RwrstY','LhipY','RhipY','LkneeY','RkneeY','LanklY','RanklY','frame')
 h_adat <- adat[seq(1,30*120),]
 
