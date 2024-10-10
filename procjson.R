@@ -52,12 +52,16 @@ for (i in 1:nfl){
   }
 }
 
-fdt[fdt==0]<-NA
-adat<-rollmean(fdt,k=ave,na.pad=T)
-adat<-cbind(adat,seq(1,nrow(adat)))
-colnames(adat)<-c('NoseX','LeyeX','ReyeX','LearX','RearX','LshldX','RshldX','LelbX','RelbX','LwrstX','RwrstX','LhipX','RhipX','LkneeX','RkneeX','LanklX','RanklX','NoseY','LeyeY','ReyeY','LearY','RearY','LshldY','RshldY','LelbY','RelbY','LwrstY','RwrstY','LhipY','RhipY','LkneeY','RkneeY','LanklY','RanklY','frame')
+#fdt[fdt==0]<-NA
+#fdt2<-na.fill(fdt,'exend')
 
+adat<-rollmean(fdt,k=ave)
+#adat<-fdt
+adat<-cbind(adat,seq(1,nrow(adat),fill))
+colnames(adat)<-c('NoseX','LeyeX','ReyeX','LearX','RearX','LshldX','RshldX','LelbX','RelbX','LwrstX','RwrstX','LhipX','RhipX','LkneeX','RkneeX','LanklX','RanklX','NoseY','LeyeY','ReyeY','LearY','RearY','LshldY','RshldY','LelbY','RelbY','LwrstY','RwrstY','LhipY','RhipY','LkneeY','RkneeY','LanklY','RanklY','frame')
 h_adat <- adat[seq(1,30*120),]
+
+adat<-data.frame(adat)
 
 handpos<-data.frame()
 rhandmv<-sqrt((median(adat$RwrstX,na.rm=T)-adat$RwrstX)^2+(median(adat$RwrstY,na.rm=T)-adat$RwrstY)^2)
@@ -68,7 +72,7 @@ handmv<-cbind(handmv, seq(1,nrow(handmv)))
 handmv<-data.frame(handmv)
 colnames(handmv)<-c('Right','Left', 'Frame')
 
-p_handmv<-handmv[1:30*130,]
+p_handmv<-handmv[seq(1,30*120),]
 
 library(tidyverse)
 library(ggplot2)
@@ -78,7 +82,7 @@ lhand<-pivot_longer(handmv, cols=c(Right,Left), names_to='LR', values_to='diff')
 p_lhand<-pivot_longer(p_handmv, cols=c(Right,Left), names_to='LR', values_to='diff')
 
 ghand<-ggplot(data=lhand, aes(x=Frame/29, y=diff, color=LR))+geom_line()
-p_ghand<-ggplot(data=p_lhand, aes(x=Frame/29, y=diff, color=LR))+geom_line(linewidth=3)+theme(text=element_text(size=24))
+p_ghand<-ggplot(data=p_lhand, aes(x=Frame/29, y=diff, color=LR))+geom_line(linewidth=2)+theme(text=element_text(size=24))
 
 gRwrst<-ggplot(data=ladat, aes(x=frame/29,y=val,colour = part))+geom_line()
 
