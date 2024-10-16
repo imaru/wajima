@@ -20,6 +20,12 @@ source('read_vocal.R')
 imaru<-classdat
 roll_imaru<-rollapplyr(imaru[,2:6], fr*period, max, na.rm=TRUE, by=fr*sums)
 
+source('read_vocal.R')
+tanakay<-classdat
+
+i_t <- cbind(imaru[,1], imaru[,2:6]*tanakay[,2:6])
+roll_i_t<-rollapplyr(i_t[,2:6], fr*period, max, na.rm=TRUE, by=fr*sums)
+
 # specify the open pose result file
 facedir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\processed"
 opr<-read.csv(paste(facedir,'wajima1_compressed.csv', sep='/'))
@@ -33,30 +39,30 @@ fdt<-data.frame()
 
 # read json files
 # if more than one people are in the movie, select most confident one
-for (i in 1:nfl){
-  d<-ndjson::stream_in(paste(tdir,fl[i],sep='/'))
-  dd<-d[[1]]
-  for (j in 1:length(dd)){
-    data<-fromJSON(dd[[j]])
-    
-    #for (k in 1:length(data$confidence)){
-      if (length(data$confidence)>1){
-        maxp <- which(max(data$confidence)==data$confidence)
-        if (data$confidence[maxp] > thre){
-          fdt[j+(i-1)*jsonlen,seq(1,17)]<-t(data$keypoints[[maxp]][[1]])
-          fdt[j+(i-1)*jsonlen,seq(18,34)]<-t(data$keypoints[[maxp]][[2]])
-        }
-      }
-      else{
-        if (data$confidence > thre){
-          fdt[j+(i-1)*jsonlen,seq(1,17)]<-t(data$keypoints$x[[1]])
-          fdt[j+(i-1)*jsonlen,seq(18,34)]<-t(data$keypoints$y[[1]])
-        }
-      }
-    #}
-  }
-}
-
+# for (i in 1:nfl){
+#   d<-ndjson::stream_in(paste(tdir,fl[i],sep='/'))
+#   dd<-d[[1]]
+#   for (j in 1:length(dd)){
+#     data<-fromJSON(dd[[j]])
+#     
+#     #for (k in 1:length(data$confidence)){
+#       if (length(data$confidence)>1){
+#         maxp <- which(max(data$confidence)==data$confidence)
+#         if (data$confidence[maxp] > thre){
+#           fdt[j+(i-1)*jsonlen,seq(1,17)]<-t(data$keypoints[[maxp]][[1]])
+#           fdt[j+(i-1)*jsonlen,seq(18,34)]<-t(data$keypoints[[maxp]][[2]])
+#         }
+#       }
+#       else{
+#         if (data$confidence > thre){
+#           fdt[j+(i-1)*jsonlen,seq(1,17)]<-t(data$keypoints$x[[1]])
+#           fdt[j+(i-1)*jsonlen,seq(18,34)]<-t(data$keypoints$y[[1]])
+#         }
+#       }
+#     #}
+#   }
+# }
+fdt<-readRDS('fdt1010.obj') # RDSファイルの使用
 colnames(fdt)<-c('NoseX','LeyeX','ReyeX','LearX','RearX','LshldX','RshldX','LelbX','RelbX','LwrstX','RwrstX','LhipX','RhipX','LkneeX','RkneeX','LanklX','RanklX','NoseY','LeyeY','ReyeY','LearY','RearY','LshldY','RshldY','LelbY','RelbY','LwrstY','RwrstY','LhipY','RhipY','LkneeY','RkneeY','LanklY','RanklY')
 
 fdt[fdt==0]<-NA
@@ -74,8 +80,8 @@ VertV<-rollapplyr(opr$gaze_angle_y, fr*period, sd, na.rm=TRUE, by=fr*sums)
 facePitchV<-rollapplyr(opr$pose_Rx, fr*period, sd, na.rm=TRUE, by=fr*sums)
 faceYawV<-rollapplyr(opr$pose_Ry, fr*period, sd, na.rm=TRUE, by=fr*sums)
 faceRollV<-rollapplyr(opr$pose_Rz, fr*period, sd, na.rm=TRUE, by=fr*sums)
-
-
+AU45<-rollapplyr(opr$AU45_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
+AU12<-rollapplyr(opr$AU12_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
 
 HorizM<-rollapplyr(opr$gaze_angle_x, fr*period, mean, na.rm=TRUE, by=fr*sums)
 VertM<-rollapplyr(opr$gaze_angle_y, fr*period, mean, na.rm=TRUE, by=fr*sums)
@@ -105,10 +111,10 @@ Lhand<-(LwrstxV+LwrstyV)/2
 #Lhand<-(LwrstxV/LwrstxM+LwrstyV/LwrstyM)/2
 
 
-datlen<-min(nrow(roll_imaru),nrow(Rhand),nrow(faceRoll))
-summary_takade <- data.frame(cbind(roll_imaru[1:datlen,], eyeX[1:datlen], eyeY[1:datlen], facePitch[1:datlen], faceYaw[1:datlen], faceRoll[1:datlen], Rhand[1:datlen], Lhand[1:datlen]))
+datlen<-min(nrow(roll_i_t),nrow(Rhand),nrow(faceRoll))
+summary_takade <- data.frame(cbind(roll_i_t[1:datlen,], eyeX[1:datlen], eyeY[1:datlen], facePitch[1:datlen], faceYaw[1:datlen], faceRoll[1:datlen], Rhand[1:datlen], Lhand[1:datlen], AU45[1:datlen], AU12[1:datlen]))
 
-colnames(summary_takade)<-c('non', 'pp', 'pn', 'fp', 'fn', 'eyeX', 'eyeY', 'facePitch', 'faceYaw', 'faceRoll', 'Rhand', 'Lhand')
+colnames(summary_takade)<-c('non', 'pp', 'pn', 'fp', 'fn', 'eyeX', 'eyeY', 'facePitch', 'faceYaw', 'faceRoll', 'Rhand', 'Lhand','AU45','AU12')
 
 s_tak <- summary_takade
 
@@ -124,10 +130,10 @@ ggheatmap::ggheatmap(summary_takade[,11:12])
 library(brms)
 
 
-pn_form<-bf(pn~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand)
-pp_form<-bf(pp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand)
-fn_form<-bf(fn~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand)
-fp_form<-bf(fp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand)
+pn_form<-bf(pn~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand+AU45+AU12)
+pp_form<-bf(pp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand+AU45+AU12)
+fn_form<-bf(fn~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand+AU45+AU12)
+fp_form<-bf(fp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand+AU45+AU12)
 
 
 lm_pn <- brm(
