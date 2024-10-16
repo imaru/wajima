@@ -9,9 +9,9 @@ library(ggplot2)
 thre<-0.7
 jsonlen<-200
 fr<-30 # frame rate
-period<-5 # period length for calculate variance
+period<-3 # period length for calculate variance
 ave<-fr*3
-sums<-5
+sums<-3
 
 # tdir<-choose.dir()
 
