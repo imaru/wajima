@@ -1,41 +1,38 @@
 library(jsonlite)
 library(ndjson)
 library(quantmod)
+library(tidyverse)
+library(ggplot2)
+
+# R script for processing of pose and facial expression data
 
 thre<-0.7
 jsonlen<-200
-fr<-30
+fr<-30 # frame rate
+period<-5 # period length for calculate variance
 ave<-fr*3
+sums<-5
 
 # tdir<-choose.dir()
-tdir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\pose\\res"
-fl<-list.files(tdir, pattern='\\.json$')
 
+# read class file
+source('read_vocal.R')
+imaru<-classdat
+roll_imaru<-rollapplyr(imaru[,2:6], fr*period, max, na.rm=TRUE, by=fr*sums)
+
+# specify the open pose result file
 facedir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\processed"
 opr<-read.csv(paste(facedir,'wajima1_compressed.csv', sep='/'))
 
-# rollapplyr(ret_matriz, 5, sd, fill = 0)
-# aaa<-rollapplyr(opr$gaze_angle_x, 30*5, sd, na.rm=TRUE, by=30*5)
-
+# specify a directory of json pose files
+tdir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\pose\\res1010"
+fl<-list.files(tdir, pattern='\\.json$')
 
 nfl<-length(fl)
 fdt<-data.frame()
 
-# for (i in 1:nfl){
-#   d<-ndjson::stream_in(paste(tdir,fl[i],sep='/'))
-#   dd<-d[[1]]
-#   for (j in 1:length(dd)){
-#     data<-fromJSON(dd[[j]])
-#     for (k in 1:length(data)){
-#       if (data[[k]]$confidence > thre){
-#         fdt[j+(i-1)*jsonlen,seq(1,17)]<-data[[k]]$keypoints$x
-#         fdt[j+(i-1)*jsonlen,seq(18,34)]<-data[[k]]$keypoints$y
-#       }
-#     }
-#   }
-# }
-
-
+# read json files
+# if more than one people are in the movie, select most confident one
 for (i in 1:nfl){
   d<-ndjson::stream_in(paste(tdir,fl[i],sep='/'))
   dd<-d[[1]]
@@ -63,37 +60,135 @@ for (i in 1:nfl){
 colnames(fdt)<-c('NoseX','LeyeX','ReyeX','LearX','RearX','LshldX','RshldX','LelbX','RelbX','LwrstX','RwrstX','LhipX','RhipX','LkneeX','RkneeX','LanklX','RanklX','NoseY','LeyeY','ReyeY','LearY','RearY','LshldY','RshldY','LelbY','RelbY','LwrstY','RwrstY','LhipY','RhipY','LkneeY','RkneeY','LanklY','RanklY')
 
 fdt[fdt==0]<-NA
-#fdt2<-na.fill(fdt,'exend')
-
-#adat<-rollmean(fdt,k=ave)
 adat<-fdt
 adat<-cbind(adat,seq(1,nrow(adat)))
 colnames(adat)<-c('NoseX','LeyeX','ReyeX','LearX','RearX','LshldX','RshldX','LelbX','RelbX','LwrstX','RwrstX','LhipX','RhipX','LkneeX','RkneeX','LanklX','RanklX','NoseY','LeyeY','ReyeY','LearY','RearY','LshldY','RshldY','LelbY','RelbY','LwrstY','RwrstY','LhipY','RhipY','LkneeY','RkneeY','LanklY','RanklY','frame')
-h_adat <- adat[seq(1,30*120),]
 
 adat<-data.frame(adat)
 
-handpos<-data.frame()
-rhandmv<-sqrt((median(adat$RwrstX,na.rm=T)-adat$RwrstX)^2+(median(adat$RwrstY,na.rm=T)-adat$RwrstY)^2)
-lhandmv<-sqrt((median(adat$LwrstX,na.rm=T)-adat$LwrstX)^2+(median(adat$LwrstY,na.rm=T)-adat$LwrstY)^2)
+# calculate variances 
 
-handmv<-cbind(rhandmv,lhandmv)
-handmv<-cbind(handmv, seq(1,nrow(handmv)))
-handmv<-data.frame(handmv)
-colnames(handmv)<-c('Right','Left', 'Frame')
+# open face
+HorizV<-rollapplyr(opr$gaze_angle_x, fr*period, sd, na.rm=TRUE, by=fr*sums)
+VertV<-rollapplyr(opr$gaze_angle_y, fr*period, sd, na.rm=TRUE, by=fr*sums)
+facePitchV<-rollapplyr(opr$pose_Rx, fr*period, sd, na.rm=TRUE, by=fr*sums)
+faceYawV<-rollapplyr(opr$pose_Ry, fr*period, sd, na.rm=TRUE, by=fr*sums)
+faceRollV<-rollapplyr(opr$pose_Rz, fr*period, sd, na.rm=TRUE, by=fr*sums)
 
-p_handmv<-handmv[seq(1,30*120),]
 
-library(tidyverse)
-library(ggplot2)
 
-ladat<-pivot_longer(data.frame(h_adat), cols=(c(RwrstX,RwrstY,LwrstX,LwrstY)), names_to = 'part', values_to = 'val')
-lhand<-pivot_longer(handmv, cols=c(Right,Left), names_to='LR', values_to='diff')
-p_lhand<-pivot_longer(p_handmv, cols=c(Right,Left), names_to='LR', values_to='diff')
+HorizM<-rollapplyr(opr$gaze_angle_x, fr*period, mean, na.rm=TRUE, by=fr*sums)
+VertM<-rollapplyr(opr$gaze_angle_y, fr*period, mean, na.rm=TRUE, by=fr*sums)
+facePitchM<-rollapplyr(opr$pose_Rx, fr*period, mean, na.rm=TRUE, by=fr*sums)
+faceYawM<-rollapplyr(opr$pose_Ry, fr*period, mean, na.rm=TRUE, by=fr*sums)
+faceRollM<-rollapplyr(opr$pose_Rz, fr*period, mean, na.rm=TRUE, by=fr*sums)
 
-ghand<-ggplot(data=lhand, aes(x=Frame/29, y=diff, color=LR))+geom_line()
-p_ghand<-ggplot(data=p_lhand, aes(x=Frame/29, y=diff, color=LR))+geom_line(linewidth=2)+theme(text=element_text(size=24))
+eyeX<-HorizV
+eyeY<-VertV
+facePitch<-facePitchV
+faceYaw<-faceYawV
+faceRoll<-faceRollV
 
-gRwrst<-ggplot(data=ladat, aes(x=frame/29,y=val,colour = part))+geom_line()
+# yolo
+RwrstxV<-rollapplyr(adat$RwrstX, fr*period, sd, na.rm=TRUE, by=fr*sums)
+RwrstxM<-rollapplyr(adat$RwrstX, fr*period, mean, na.rm=TRUE, by=fr*sums)
+RwrstyV<-rollapplyr(adat$RwrstY, fr*period, sd, na.rm=TRUE, by=fr*sums)
+RwrstyM<-rollapplyr(adat$RwrstY, fr*period, mean, na.rm=TRUE, by=fr*sums)
+Rhand<-(RwrstxV+RwrstyV)/2
+#Rhand<-(RwrstxV/RwrstxM+RwrstyV/RwrstyM)/2
 
-plot(p_ghand)
+LwrstxV<-rollapplyr(adat$LwrstX, fr*period, sd, na.rm=TRUE, by=fr*sums)
+LwrstxM<-rollapplyr(adat$LwrstX, fr*period, mean, na.rm=TRUE, by=fr*sums)
+LwrstyV<-rollapplyr(adat$LwrstY, fr*period, sd, na.rm=TRUE, by=fr*sums)
+LwrstyM<-rollapplyr(adat$LwrstY, fr*period, mean, na.rm=TRUE, by=fr*sums)
+Lhand<-(LwrstxV+LwrstyV)/2
+#Lhand<-(LwrstxV/LwrstxM+LwrstyV/LwrstyM)/2
+
+
+datlen<-min(nrow(roll_imaru),nrow(Rhand),nrow(faceRoll))
+summary_takade <- data.frame(cbind(roll_imaru[1:datlen,], eyeX[1:datlen], eyeY[1:datlen], facePitch[1:datlen], faceYaw[1:datlen], faceRoll[1:datlen], Rhand[1:datlen], Lhand[1:datlen]))
+
+colnames(summary_takade)<-c('non', 'pp', 'pn', 'fp', 'fn', 'eyeX', 'eyeY', 'facePitch', 'faceYaw', 'faceRoll', 'Rhand', 'Lhand')
+
+s_tak <- summary_takade
+
+s_tak$Rhand[which(is.na(s_tak$Rhand))]<-0
+s_tak$Lhand[which(is.na(s_tak$Lhand))]<-0
+
+
+
+library(ggheatmap)
+
+ggheatmap::ggheatmap(summary_takade[,11:12])
+
+library(brms)
+
+
+pn_form<-bf(pn~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand)
+pp_form<-bf(pp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand)
+fn_form<-bf(fn~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand)
+fp_form<-bf(fp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand)
+
+
+lm_pn <- brm(
+  formula=pn_form,
+  family = bernoulli(),
+  data=s_tak,
+  prior = c(set_prior("",class='Intercept'))  
+)
+
+lm_pn
+
+lm_pp <- brm(
+  formula=pp_form,
+  family = bernoulli(),
+  data=s_tak,
+  prior = c(set_prior("",class='Intercept'))  
+)
+
+lm_pp
+
+lm_fn <- brm(
+  formula=fn_form,
+  family = bernoulli(),
+  data=s_tak,
+  prior = c(set_prior("",class='Intercept'))  
+)
+
+lm_fn
+
+lm_fp <- brm(
+  formula=fp_form,
+  family = bernoulli(),
+  data=s_tak,
+  prior = c(set_prior("",class='Intercept'))  
+)
+
+lm_fp
+
+
+
+# handpos<-data.frame()
+# 
+# # calculate hand positions in each time frame from median position
+# rhandmv<-sqrt((median(adat$RwrstX,na.rm=T)-adat$RwrstX)^2+(median(adat$RwrstY,na.rm=T)-adat$RwrstY)^2)
+# lhandmv<-sqrt((median(adat$LwrstX,na.rm=T)-adat$LwrstX)^2+(median(adat$LwrstY,na.rm=T)-adat$LwrstY)^2)
+# handmv<-cbind(rhandmv,lhandmv)
+# handmv<-cbind(handmv, seq(1,nrow(handmv)))
+# handmv<-data.frame(handmv)
+# colnames(handmv)<-c('Right','Left', 'Frame')
+# 
+
+# # extract a part of results for presentation
+# h_adat <- adat[seq(1,30*120),]
+# p_handmv<-handmv[seq(1,30*120),]
+# 
+# # make graphs 
+# ladat<-pivot_longer(data.frame(h_adat), cols=(c(RwrstX,RwrstY,LwrstX,LwrstY)), names_to = 'part', values_to = 'val')
+# lhand<-pivot_longer(handmv, cols=c(Right,Left), names_to='LR', values_to='diff')
+# p_lhand<-pivot_longer(p_handmv, cols=c(Right,Left), names_to='LR', values_to='diff')
+# 
+# ghand<-ggplot(data=lhand, aes(x=Frame/29, y=diff, color=LR))+geom_line()
+# p_ghand<-ggplot(data=p_lhand, aes(x=Frame/29, y=diff, color=LR))+geom_line(linewidth=2)+theme(text=element_text(size=24))
+# gRwrst<-ggplot(data=ladat, aes(x=frame/29,y=val,colour = part))+geom_line()
+# plot(p_ghand)
