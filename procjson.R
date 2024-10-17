@@ -135,6 +135,7 @@ pp_form<-bf(pp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand+AU45+AU12)
 fn_form<-bf(fn~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand+AU45+AU12)
 fp_form<-bf(fp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand+AU45+AU12)
 
+# brms
 
 lm_pn <- brm(
   formula=pn_form,
@@ -172,29 +173,10 @@ lm_fp <- brm(
 
 lm_fp
 
+# state space model 1
 
+library(rstan)
 
-# handpos<-data.frame()
-# 
-# # calculate hand positions in each time frame from median position
-# rhandmv<-sqrt((median(adat$RwrstX,na.rm=T)-adat$RwrstX)^2+(median(adat$RwrstY,na.rm=T)-adat$RwrstY)^2)
-# lhandmv<-sqrt((median(adat$LwrstX,na.rm=T)-adat$LwrstX)^2+(median(adat$LwrstY,na.rm=T)-adat$LwrstY)^2)
-# handmv<-cbind(rhandmv,lhandmv)
-# handmv<-cbind(handmv, seq(1,nrow(handmv)))
-# handmv<-data.frame(handmv)
-# colnames(handmv)<-c('Right','Left', 'Frame')
-# 
-
-# # extract a part of results for presentation
-# h_adat <- adat[seq(1,30*120),]
-# p_handmv<-handmv[seq(1,30*120),]
-# 
-# # make graphs 
-# ladat<-pivot_longer(data.frame(h_adat), cols=(c(RwrstX,RwrstY,LwrstX,LwrstY)), names_to = 'part', values_to = 'val')
-# lhand<-pivot_longer(handmv, cols=c(Right,Left), names_to='LR', values_to='diff')
-# p_lhand<-pivot_longer(p_handmv, cols=c(Right,Left), names_to='LR', values_to='diff')
-# 
-# ghand<-ggplot(data=lhand, aes(x=Frame/29, y=diff, color=LR))+geom_line()
-# p_ghand<-ggplot(data=p_lhand, aes(x=Frame/29, y=diff, color=LR))+geom_line(linewidth=2)+theme(text=element_text(size=24))
-# gRwrst<-ggplot(data=ladat, aes(x=frame/29,y=val,colour = part))+geom_line()
-# plot(p_ghand)
+dat1<-list(N=length(s_tak$pn), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$eyeY, AU45 = s_tak$AU45, AU12 = s_tak$AU12)
+model1<-stan_model(file='ssm1.stan', model_name='ssm1')
+fit1<-sampling(model1, data=dat1, iter=4000, warmup=2000, thin=4, chain=4)
