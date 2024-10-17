@@ -177,9 +177,12 @@ lm_fp <- brm(
 
 lm_fp
 
-# state space model 1
 
 library(rstan)
+rstan_options(auto_write=TRUE)
+options(mc.cores=parallel::detectCores())
+
+# state space model 1
 
 dat1<-list(N=length(s_tak$pn), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$eyeY, AU45 = s_tak$AU45, AU12 = s_tak$AU12)
 model1<-stan_model(file='ssm1.stan', model_name='ssm1')
