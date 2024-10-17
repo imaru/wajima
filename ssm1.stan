@@ -24,11 +24,15 @@ data {
 parameters {
   vector[N] mu;
   real<lower=0> sigma_S;
+  real b1;
+  real b2;
+  real b3;
+  real b4;
 }
 
 transformed parameters{
   vector<lower=0, upper=1>[N] p;
-  p = inv_logit(mu + eyex + eyey + AU45 + AU12);
+  p = inv_logit(mu + b1*eyex + b2*eyey + b3*AU45 + b4*AU12);
   //p = inv_logit(mu+eyex);
 }
 
