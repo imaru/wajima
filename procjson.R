@@ -188,6 +188,7 @@ dat1<-list(N=length(s_tak$pn), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$e
 model1<-stan_model(file='ssm1.stan', model_name='ssm1')
 fit1<-sampling(model1, data=dat1, iter=4000, warmup=2000, thin=4, chain=4)
 res1<-rstan::extract(fit1)
+print(fit2, pars=c('Intercept','b1','b2','b3','b4'), probs=c(0.025,0.5,0.975))
 
 # state space model 2
 
