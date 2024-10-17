@@ -27,16 +27,19 @@ i_t <- cbind(imaru[,1], imaru[,2:6]*tanakay[,2:6])
 roll_i_t<-rollapplyr(i_t[,2:6], fr*period, max, na.rm=TRUE, by=fr*sums)
 
 # specify the open pose result file
-facedir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\processed"
-opr<-read.csv(paste(facedir,'wajima1_compressed.csv', sep='/'))
+# facedir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\processed"
+# opr<-read.csv(paste(facedir,'wajima1_compressed.csv', sep='/'))
+
+# for linux
+opr<-read.csv('../../wajima1_compressed.csv')
 
 # specify a directory of json pose files
-tdir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\pose\\res1010"
-fl<-list.files(tdir, pattern='\\.json$')
+# tdir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\pose\\res1010"
+# fl<-list.files(tdir, pattern='\\.json$')
 
-nfl<-length(fl)
-fdt<-data.frame()
-
+# nfl<-length(fl)
+# fdt<-data.frame()
+# 
 # read json files
 # if more than one people are in the movie, select most confident one
 # for (i in 1:nfl){
