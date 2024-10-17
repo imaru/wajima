@@ -16,11 +16,11 @@ sums<-3
 # tdir<-choose.dir()
 
 # read class file
-source('read_vocal.R')
+source('read_vocal_imaru.R')
 imaru<-classdat
 roll_imaru<-rollapplyr(imaru[,2:6], fr*period, max, na.rm=TRUE, by=fr*sums)
 
-source('read_vocal.R')
+source('read_vocal_tanaka.R')
 tanakay<-classdat
 
 i_t <- cbind(imaru[,1], imaru[,2:6]*tanakay[,2:6])
