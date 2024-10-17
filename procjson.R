@@ -65,6 +65,7 @@ opr<-read.csv('../../wajima1_compressed.csv')
 #     #}
 #   }
 # }
+
 fdt<-readRDS('fdt1010.obj') # RDSファイルの使用
 colnames(fdt)<-c('NoseX','LeyeX','ReyeX','LearX','RearX','LshldX','RshldX','LelbX','RelbX','LwrstX','RwrstX','LhipX','RhipX','LkneeX','RkneeX','LanklX','RanklX','NoseY','LeyeY','ReyeY','LearY','RearY','LshldY','RshldY','LelbY','RelbY','LwrstY','RwrstY','LhipY','RhipY','LkneeY','RkneeY','LanklY','RanklY')
 
@@ -184,3 +185,11 @@ dat1<-list(N=length(s_tak$pn), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$e
 model1<-stan_model(file='ssm1.stan', model_name='ssm1')
 fit1<-sampling(model1, data=dat1, iter=4000, warmup=2000, thin=4, chain=4)
 res1<-rstan::extract(fit1)
+
+# state space model 2
+
+dat2<-list(N=length(s_tak$pn), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$eyeY, faceP = s_tak$facePitch, faceY = s_tak$faceYaw, faceR = s_tak$faceRoll, rightH = s_tak$rightH, leftH = s_tak$leftH, AU45 = s_tak$AU45, AU12 = s_tak$AU12)
+model2<-stan_model(file='ssm2.stan', model_name='ssm2')
+fit2<-sampling(model2, data=dat2, iter=4000, warmup=2000, thin=4, chain=4)
+res2<-rstan::extract(fit2)
+print(fit2, pars=c('Intercept','b_x','b_y','b_P','b_Y', 'b_R', 'b_r', 'b_l', 'b_45', 'b_12'), probs=c(0.025,0.5,0.975))
