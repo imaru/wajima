@@ -10,21 +10,20 @@ thre<-0.7
 jsonlen<-200
 fr<-30 # frame rate
 period<-3 # period length for calculate variance
-ave<-fr*3
-sums<-3
+sums<-1/fr
 
 # tdir<-choose.dir()
 
 # read class file
 source('read_vocal_imaru.R')
 imaru<-classdat
-roll_imaru<-rollapplyr(imaru[,2:6], fr*period, max, na.rm=TRUE, by=fr*sums)
+roll_imaru<-rollapplyr(imaru[,2:6], fr*period, sum, na.rm=TRUE, by=fr*sums)
 
 source('read_vocal_tanaka.R')
 tanakay<-classdat
 
 i_t <- cbind(imaru[,1], imaru[,2:6]*tanakay[,2:6])
-roll_i_t<-rollapplyr(i_t[,2:6], fr*period, max, na.rm=TRUE, by=fr*sums)
+roll_i_t<-rollapplyr(i_t[,2:6], fr*period, sum, na.rm=TRUE, by=fr*sums)
 
 # specify the open pose result file
 facedir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\processed"
@@ -84,7 +83,7 @@ VertV<-rollapplyr(opr$gaze_angle_y, fr*period, sd, na.rm=TRUE, by=fr*sums)
 facePitchV<-rollapplyr(opr$pose_Rx, fr*period, sd, na.rm=TRUE, by=fr*sums)
 faceYawV<-rollapplyr(opr$pose_Ry, fr*period, sd, na.rm=TRUE, by=fr*sums)
 faceRollV<-rollapplyr(opr$pose_Rz, fr*period, sd, na.rm=TRUE, by=fr*sums)
-AU45<-rollapplyr(opr$AU45_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
+AU45<-rollapplyr(opr$AU45_c, fr*period, sum, na.rm=TRUE, by=fr*sums)
 AU12<-rollapplyr(opr$AU12_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
 
 HorizM<-rollapplyr(opr$gaze_angle_x, fr*period, mean, na.rm=TRUE, by=fr*sums)
@@ -182,18 +181,27 @@ library(rstan)
 rstan_options(auto_write=TRUE)
 options(mc.cores=parallel::detectCores())
 
-# state space model 1 / 4 explanatory variables
+library(cmdstanr)
 
-dat1<-list(N=length(s_tak$pn), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$eyeY, AU45 = s_tak$AU45, AU12 = s_tak$AU12)
-model1<-stan_model(file='ssm1.stan', model_name='ssm1')
-fit1<-sampling(model1, data=dat1, iter=4000, warmup=2000, thin=4, chain=4)
-res1<-rstan::extract(fit1)
-print(fit1, pars=c('Intercept','b1','b2','b3','b4'), probs=c(0.025,0.5,0.975))
+# state space model 3 / all explanatory variables / all frames
 
-# state space model 2 / all explanatory variables
+dat3<-list(N=length(s_tak$pn), binom_size = rep(fr*period, nrow(s_tak)), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$eyeY, faceP = s_tak$facePitch, faceY = s_tak$faceYaw, faceR = s_tak$faceRoll, rH = s_tak$Rhand, lH = s_tak$Lhand, AU45 = s_tak$AU45, AU12 = s_tak$AU12)
 
-dat2<-list(N=length(s_tak$pn), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$eyeY, faceP = s_tak$facePitch, faceY = s_tak$faceYaw, faceR = s_tak$faceRoll, rH = s_tak$Rhand, lH = s_tak$Lhand, AU45 = s_tak$AU45, AU12 = s_tak$AU12)
-model2<-stan_model(file='ssm2.stan', model_name='ssm2')
-fit2<-sampling(model2, data=dat2, iter=4000, warmup=2000, thin=4, chain=4)
-res2<-rstan::extract(fit2)
-print(fit2, pars=c('b_x','b_y','b_P','b_Y', 'b_R', 'b_r', 'b_l', 'b_45', 'b_12'), probs=c(0.025,0.5,0.975))
+# cmdstanr
+
+res3cmd<-cmdstan_model('ssm3.stan')
+fit3cmd<-res3cmd$sample(
+  data = dat3,
+  chains = 4,
+  refresh = 100,
+  iter_warmup = 1000,
+  iter_sampling = 3000,
+  parallel_chains = 4
+)
+fit3cmd$print(c('b_x','b_y','b_P','b_Y', 'b_R', 'b_r', 'b_l', 'b_45', 'b_12'), probs=c(0.025,0.5,0.975))
+# rstan
+
+model3<-stan_model(file='ssm3.stan', model_name='ssm3')
+fit3<-sampling(model3, data=dat3, iter=4000, warmup=2000, thin=4, chain=4)
+res3<-rstan::extract(fit3)
+print(fit3, pars=c('b_x','b_y','b_P','b_Y', 'b_R', 'b_r', 'b_l', 'b_45', 'b_12'), probs=c(0.025,0.5,0.975))
