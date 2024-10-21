@@ -45,7 +45,8 @@ parameters {
 
 transformed parameters{
   vector<lower=0, upper=1>[N] prob;
-  prob = inv_logit(Intercept + mu + b_x*eyex + b_y*eyey + b_P*faceP + b_Y*faceY+ b_R*faceR + b_r*rH + b_l*lH + b_45*AU45 + b_12*AU12);
+  //prob = inv_logit(mu + b_x*eyex + b_y*eyey + b_P*faceP + b_Y*faceY+ b_R*faceR + b_r*rH + b_l*lH + b_45*AU45 + b_12*AU12);
+  prob = inv_logit(mu + b_x*eyex + b_y*eyey);
 }
 
 
@@ -53,7 +54,9 @@ transformed parameters{
 // 'y' to be normally distributed with mean 'mu'
 // and standard deviation 'sigma'.
 model {
+  sigma_S ~ cauchy(0,5);
   for (i in 2:N)
     mu[i] ~ normal(mu[i-1], sigma_S);
-    cat ~ binomial(binom_size, prob);
+  for (i in 1:N)
+    cat[i] ~ binomial(binom_size[i], prob[i]);
 }
