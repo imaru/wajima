@@ -10,8 +10,7 @@ thre<-0.7
 jsonlen<-200
 fr<-30 # frame rate
 period<-3 # period length for calculate variance
-ave<-fr*3
-sums<-3
+sums<-1
 
 # tdir<-choose.dir()
 
@@ -84,7 +83,7 @@ VertV<-rollapplyr(opr$gaze_angle_y, fr*period, sd, na.rm=TRUE, by=fr*sums)
 facePitchV<-rollapplyr(opr$pose_Rx, fr*period, sd, na.rm=TRUE, by=fr*sums)
 faceYawV<-rollapplyr(opr$pose_Ry, fr*period, sd, na.rm=TRUE, by=fr*sums)
 faceRollV<-rollapplyr(opr$pose_Rz, fr*period, sd, na.rm=TRUE, by=fr*sums)
-AU45<-rollapplyr(opr$AU45_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
+AU45<-rollapplyr(opr$AU45_c, fr*period, max, na.rm=TRUE, by=fr*sums)
 AU12<-rollapplyr(opr$AU12_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
 
 HorizM<-rollapplyr(opr$gaze_angle_x, fr*period, mean, na.rm=TRUE, by=fr*sums)
@@ -197,3 +196,57 @@ model2<-stan_model(file='ssm2.stan', model_name='ssm2')
 fit2<-sampling(model2, data=dat2, iter=4000, warmup=2000, thin=4, chain=4)
 res2<-rstan::extract(fit2)
 print(fit2, pars=c('b_x','b_y','b_P','b_Y', 'b_R', 'b_r', 'b_l', 'b_45', 'b_12'), probs=c(0.025,0.5,0.975))
+
+library(cmdstanr)
+
+# state space model 3 / all explanatory variables / all frames
+
+dat2<-list(N=length(s_tak$pn), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$eyeY, faceP = s_tak$facePitch, faceY = s_tak$faceYaw, faceR = s_tak$faceRoll, rH = s_tak$Rhand, lH = s_tak$Lhand, AU45 = s_tak$AU45, AU12 = s_tak$AU12)
+
+# cmdstanr
+
+res2cmd<-cmdstan_model('ssm2.stan')
+fit2cmd<-res2cmd$sample(
+  data = dat2,
+  chains = 4,
+  refresh = 100,
+  iter_warmup = 1000,
+  iter_sampling = 2000,
+  parallel_chains = 4
+)
+fit2cmd$print(c('b_x','b_y','b_P','b_Y', 'b_R', 'b_r', 'b_l', 'b_45', 'b_12'))
+
+
+dat4<-list(N=length(s_tak$pn), pn = s_tak$pn, pp = s_tak$pp, fn = s_tak$fn, fp = s_tak$fp, eyex = s_tak$eyeX, eyey = s_tak$eyeY, faceP = s_tak$facePitch, faceY = s_tak$faceYaw, faceR = s_tak$faceRoll, rH = s_tak$Rhand, lH = s_tak$Lhand, AU45 = s_tak$AU45, AU12 = s_tak$AU12)
+
+res4cmd<-cmdstan_model('ssm4.stan')
+fit4cmd<-res4cmd$sample(
+  data = dat4,
+  chains = 4,
+  refresh = 100,
+  iter_warmup = 1000,
+  iter_sampling = 2000,
+  parallel_chains = 4
+)
+fit4cmd$print(c('k1','k2','k3','k4'), probs=c(0.025,0.5,0.975))
+
+
+dat5<-list(N=length(s_tak$pn), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$eyeY, faceP = s_tak$facePitch, faceY = s_tak$faceYaw, faceR = s_tak$faceRoll, rH = s_tak$Rhand, lH = s_tak$Lhand, AU45 = s_tak$AU45, AU12 = s_tak$AU12)
+
+# cmdstanr
+
+res5cmd<-cmdstan_model('ssm5.stan')
+fit5cmd<-res5cmd$sample(
+  data = dat5,
+  chains = 4,
+  refresh = 100,
+  iter_warmup = 2000,
+  iter_sampling = 2000,
+  parallel_chains = 4
+)
+fit5cmd$print(c('b_x','b_y','b_P','b_Y', 'b_R', 'b_r', 'b_l', 'b_45', 'b_12'))
+
+# descripription
+
+
+

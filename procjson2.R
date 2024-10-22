@@ -10,7 +10,7 @@ thre<-0.7
 jsonlen<-200
 fr<-30 # frame rate
 period<-3 # period length for calculate variance
-sums<-1/fr
+sums<-1
 
 # tdir<-choose.dir()
 
@@ -195,7 +195,7 @@ fit3cmd<-res3cmd$sample(
   chains = 4,
   refresh = 100,
   iter_warmup = 1000,
-  iter_sampling = 3000,
+  iter_sampling = 2000,
   parallel_chains = 4
 )
 fit3cmd$print(c('b_x','b_y','b_P','b_Y', 'b_R', 'b_r', 'b_l', 'b_45', 'b_12'), probs=c(0.025,0.5,0.975))

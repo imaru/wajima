@@ -58,5 +58,5 @@ model {
   for (i in 2:N)
     mu[i] ~ normal(mu[i-1], sigma_S);
   for (i in 1:N)
-    cat[i] ~ binomial(binom_size[i], prob[i]);
+    cat[i] ~ binomial(binom_size[i], prob);
 }

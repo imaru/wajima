@@ -13,39 +13,34 @@
 data {
   int<lower=0> N;
   //int<lower=0, upper=1> cat[N];
-  array[N] int<lower=0> cat;
+  vector[N] pn;
+  vector[N] pp;
+  vector[N] fn;
+  vector[N] fp;
   vector[N] eyex;
   vector[N] eyey;
   vector[N] faceP;
   vector[N] faceY;
   vector[N] faceR;
-  vector[N] rH;
-  vector[N] lH;
-  vector[N] AU45;
-  vector[N] AU12;
 }
 
 // The parameters accepted by the model. Our model
 // accepts two parameters 'mu' and 'sigma'.
 parameters {
-  //vector[N] mu;
-  real Intercept;
+  vector[N] mu;
   real<lower=0> sigma_S;
-  real b_x;
-  real b_y;
-  real b_P;
-  real b_Y;
-  real b_R;
-  real b_r;
-  real b_l;
-  real b_45;
-  real b_12;
+  real<lower=0> sigma_O;
+  real k1;
+  real k2;
+  real k3;
+  real k4;
 }
 
 transformed parameters{
-  vector<lower=0, upper=1>[N] p;
-  p = inv_logit(Intercept + b_x*eyex + b_y*eyey + b_P*faceP + b_Y*faceY+ b_R*faceR + b_r*rH + b_l*lH + b_45*AU45 + b_12*AU12);
-  //p = inv_logit(mu);
+  vector[N] y;
+  //p = inv_logit(mu + b_x*eyex + b_y*eyey + b_P*faceP + b_Y*faceY+ b_R*faceR + b_r*rH + b_l*lH + b_45*AU45 + b_12*AU12);
+  // p = inv_logit(mu);
+  y = mu + k1*pn + k2*pp + k3*fn + k4*fp; 
 }
 
 // The model to be estimated. We model the output
@@ -53,6 +48,6 @@ transformed parameters{
 // and standard deviation 'sigma'.
 model {
   for (i in 2:N)
-    //mu[i] ~ normal(mu[i-1], sigma_S);
-    cat ~ bernoulli(p);
+    mu[i] ~ normal(mu[i-1], sigma_S);
+  faceP ~ normal(y, sigma_O);
 }
