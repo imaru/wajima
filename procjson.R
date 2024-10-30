@@ -242,7 +242,7 @@ fit5cmd<-res5cmd$sample(
   refresh = 100,
   iter_warmup = 2000,
   iter_sampling = 2000,
-  parallel_chains = 4
+  parallel_chains = 12
 )
 fit5cmd$print(c('b_x','b_y','b_P','b_Y', 'b_R', 'b_r', 'b_l', 'b_45', 'b_12'))
 
