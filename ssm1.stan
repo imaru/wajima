@@ -15,8 +15,11 @@ data {
   int<lower=0, upper=1> cat[N];
   vector[N] eyex;
   vector[N] eyey;
-  vector[N] AU45;
-  vector[N] AU12;
+  vector[N] facepitch;
+  vector[N] faceyaw;
+  vector[N] faceroll;
+  vector[N] AU1;
+  vector[N] AU6;
 }
 
 // The parameters accepted by the model. Our model
@@ -28,11 +31,14 @@ parameters {
   real b2;
   real b3;
   real b4;
+  real b5;
+  real b6;
+  real b7;
 }
 
 transformed parameters{
   vector<lower=0, upper=1>[N] p;
-  p = inv_logit(mu + b1*eyex + b2*eyey + b3*AU45 + b4*AU12);
+  p = inv_logit(mu + b1*eyex + b2*eyey + b3*facepitch + b4*faceyaw + b5*faceroll + b6+AU1 + b7*AU6);
   //p = inv_logit(mu+eyex);
 }
 

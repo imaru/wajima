@@ -10,23 +10,23 @@ thre<-0.7
 jsonlen<-200
 fr<-30 # frame rate
 period<-3 # period length for calculate variance
-sums<-1
+sums<-3
 
 # tdir<-choose.dir()
 
 # read class file
 source('read_vocal_imaru.R')
 imaru<-classdat
-roll_imaru<-rollapplyr(imaru[,2:6], fr*period, max, na.rm=TRUE, by=fr*sums)
 
 source('read_vocal_tanaka.R')
 tanakay<-classdat
 
 source('read_vocal_wata.R')
-watakay<-classdat
+nwatanabe<-classdat
 
-i_t_w <- cbind(imaru[,1], imaru[,2:6]*tanakay[,2:6])
-roll_i_t<-rollapplyr(i_t[,2:6], fr*period, max, na.rm=TRUE, by=fr*sums)
+anddata<-(imaru[,3:6]+tanakay[,3:6]+nwatanabe[,3:6])>1
+roll_and<-rollapply(anddata,fr*sums,max,na.rm=TRUE,by=fr*sums)
+
 
 # specify the open pose result file
 facedir<-"C:\\Users\\imaru\\Dropbox\\Class\\2024\\2024wajima\\processed"
@@ -86,8 +86,15 @@ VertV<-rollapplyr(opr$gaze_angle_y, fr*period, sd, na.rm=TRUE, by=fr*sums)
 facePitchV<-rollapplyr(opr$pose_Rx, fr*period, sd, na.rm=TRUE, by=fr*sums)
 faceYawV<-rollapplyr(opr$pose_Ry, fr*period, sd, na.rm=TRUE, by=fr*sums)
 faceRollV<-rollapplyr(opr$pose_Rz, fr*period, sd, na.rm=TRUE, by=fr*sums)
-AU45<-rollapplyr(opr$AU45_c, fr*period, max, na.rm=TRUE, by=fr*sums)
+AU45<-rollapplyr(opr$AU45_c, fr*period, mean, na.rm=TRUE, by=fr*sums)
+AU1<-rollapplyr(opr$AU01_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
+AU2<-rollapplyr(opr$AU02_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
+AU4<-rollapplyr(opr$AU04_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
+AU6<-rollapplyr(opr$AU06_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
 AU12<-rollapplyr(opr$AU12_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
+AU25<-rollapplyr(opr$AU25_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
+AU26<-rollapplyr(opr$AU26_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
+AU17<-rollapplyr(opr$AU17_r, fr*period, mean, na.rm=TRUE, by=fr*sums)
 
 HorizM<-rollapplyr(opr$gaze_angle_x, fr*period, mean, na.rm=TRUE, by=fr*sums)
 VertM<-rollapplyr(opr$gaze_angle_y, fr*period, mean, na.rm=TRUE, by=fr*sums)
@@ -117,29 +124,78 @@ Lhand<-(LwrstxV+LwrstyV)/2
 #Lhand<-(LwrstxV/LwrstxM+LwrstyV/LwrstyM)/2
 
 
-datlen<-min(nrow(roll_i_t),nrow(Rhand),nrow(faceRoll))
-summary_takade <- data.frame(cbind(roll_i_t[1:datlen,], eyeX[1:datlen], eyeY[1:datlen], facePitch[1:datlen], faceYaw[1:datlen], faceRoll[1:datlen], Rhand[1:datlen], Lhand[1:datlen], AU45[1:datlen], AU12[1:datlen]))
+datlen<-min(nrow(roll_and),nrow(Rhand),nrow(faceRoll))
+summary_takade <- data.frame(cbind(roll_and[1:datlen,], eyeX[1:datlen], eyeY[1:datlen], facePitch[1:datlen], faceYaw[1:datlen], faceRoll[1:datlen], Rhand[1:datlen], Lhand[1:datlen], AU45[1:datlen], AU1[1:datlen], AU2[1:datlen], AU4[1:datlen], AU6[1:datlen], AU12[1:datlen], AU25[1:datlen], AU26[1:datlen], AU17[1:datlen]))
 
-colnames(summary_takade)<-c('non', 'pp', 'pn', 'fp', 'fn', 'eyeX', 'eyeY', 'facePitch', 'faceYaw', 'faceRoll', 'Rhand', 'Lhand','AU45','AU12')
+colnames(summary_takade)<-c('pp', 'pn', 'fp', 'fn', 'eyeX', 'eyeY', 'facePitch', 'faceYaw', 'faceRoll', 'Rhand', 'Lhand','AU45','AU1','AU2','AU4','AU6','AU12','AU25','AU26','AU17')
 
 s_tak <- summary_takade
 
 s_tak$Rhand[which(is.na(s_tak$Rhand))]<-0
 s_tak$Lhand[which(is.na(s_tak$Lhand))]<-0
 
+# descriptive statistics
 
+#AU
+pndat<-data.frame()
+ppdat<-data.frame()
+fndat<-data.frame()
+fpdat<-data.frame()
+
+pndat<-s_tak[which(s_tak$pn==1),5:20]
+ppdat<-s_tak[which(s_tak$pp==1),5:20]
+fndat<-s_tak[which(s_tak$fn==1),5:20]
+fpdat<-s_tak[which(s_tak$fp==1),5:20]
+
+label<-rep('pn',nrow(pndat))
+pndat<-cbind(label,pndat)
+colnames(pndat)
+label<-rep('pp',nrow(ppdat))
+ppdat<-cbind(label,ppdat)
+label<-rep('fn',nrow(fndat))
+fndat<-cbind(label,fndat)
+label<-rep('fp',nrow(fpdat))
+fpdat<-cbind(label,fpdat)
+
+gdat<-rbind(pndat,ppdat,fndat,fpdat)
+
+library(ggplot2)
+
+AUdat1<-gdat[,c(1,10:11)]
+longAU1<-pivot_longer(AUdat1, cols=-label, values_to = 'val', names_to = 'AU')
+AUg1<-ggplot(data=longAU1, mapping=aes(x=label, y=val, fill=AU))+geom_boxplot()
+plot(AUg1)
+
+AUdat2<-gdat[,c(1,12,9,17)]
+longAU2<-pivot_longer(AUdat2, cols=-label, values_to = 'val', names_to = 'AU')
+AUg2<-ggplot(data=longAU2, mapping=aes(x=label, y=val, fill=AU))+geom_boxplot()
+plot(AUg2)
+
+AUdat3<-gdat[,c(1,13:16)]
+longAU3<-pivot_longer(AUdat3, cols=-label, values_to = 'val', names_to = 'AU')
+AUg3<-ggplot(data=longAU3, mapping=aes(x=label, y=val, fill=AU))+geom_boxplot()
+plot(AUg3)
+
+facedat<-gdat[,c(1,2:6)]
+longface<-pivot_longer(facedat, cols=-label, values_to = 'val', names_to = 'part')
+faceg<-ggplot(data=longface, mapping=aes(x=label, y=val, fill=part))+geom_boxplot()
+plot(faceg)
+
+handdat<-gdat[,c(1,7,8)]
+longhand<-pivot_longer(handdat, cols=-label, values_to = 'val', names_to = 'lr')
+handg<-ggplot(data=longhand, mapping=aes(x=label, y=val, fill=lr))+geom_boxplot()
+plot(handg)
 
 library(ggheatmap)
 
-ggheatmap::ggheatmap(summary_takade[,11:12])
+ggheatmap::ggheatmap(summary_takade[,1:4])
 
 library(brms)
 
-
-pn_form<-bf(pn~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand+AU45+AU12)
-pp_form<-bf(pp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand+AU45+AU12)
-fn_form<-bf(fn~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand+AU45+AU12)
-fp_form<-bf(fp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+Lhand+AU45+AU12)
+pn_form<-bf(pn~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+AU1+AU6)
+pp_form<-bf(pp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+AU1+AU6)
+fn_form<-bf(fn~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+AU1+AU6)
+fp_form<-bf(fp~eyeX+eyeY+facePitch+faceYaw+faceRoll+Rhand+AU1+AU6)
 
 # brms
 
@@ -186,11 +242,11 @@ options(mc.cores=parallel::detectCores())
 
 # state space model 1 / 4 explanatory variables
 
-dat1<-list(N=length(s_tak$pn), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$eyeY, AU45 = s_tak$AU45, AU12 = s_tak$AU12)
+dat1<-list(N=length(s_tak$pn), cat = s_tak$pn, eyex = s_tak$eyeX, eyey = s_tak$eyeY, facepitch=s_tak$facePitch, faceyaw=s_tak$faceYaw, faceroll=s_tak$faceRoll, AU1 = s_tak$AU1, AU6 = s_tak$AU6)
 model1<-stan_model(file='ssm1.stan', model_name='ssm1')
 fit1<-sampling(model1, data=dat1, iter=4000, warmup=2000, thin=4, chain=4)
 res1<-rstan::extract(fit1)
-print(fit1, pars=c('Intercept','b1','b2','b3','b4'), probs=c(0.025,0.5,0.975))
+print(fit1, pars=c('b1','b2','b3','b4','b5','b6','b7'), probs=c(0.025,0.5,0.975))
 
 # state space model 2 / all explanatory variables
 
