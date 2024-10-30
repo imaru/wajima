@@ -22,7 +22,10 @@ roll_imaru<-rollapplyr(imaru[,2:6], fr*period, max, na.rm=TRUE, by=fr*sums)
 source('read_vocal_tanaka.R')
 tanakay<-classdat
 
-i_t <- cbind(imaru[,1], imaru[,2:6]*tanakay[,2:6])
+source('read_vocal_wata.R')
+watakay<-classdat
+
+i_t_w <- cbind(imaru[,1], imaru[,2:6]*tanakay[,2:6])
 roll_i_t<-rollapplyr(i_t[,2:6], fr*period, max, na.rm=TRUE, by=fr*sums)
 
 # specify the open pose result file
